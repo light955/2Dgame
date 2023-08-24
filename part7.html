@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Making your first Phaser 3 Game - Part 7</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script type="text/javascript">
+        //画像サイズを取得したいので読み込んでいます
+        let img = new Image();
+        img.src = 'assets/Widesky.jpg'; // 画像ファイルのパスを指定
+
+
+        var config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 980 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        var player;
+        var platforms;
+        var cursors;
+        let goal;
+
+        var game = new Phaser.Game(config);
+
+        function preload() {
+            this.load.image('sky', 'assets/Widesky.jpg');
+            this.load.image('ground', 'assets/platform2.png');
+            this.load.image('star', 'assets/star.png');
+            this.load.image('bomb', 'assets/bomb.png');
+            this.load.image('goal', 'assets/300x300.png');
+            this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+        }
+
+        function create() {
+            this.add.image(img.width/2, config.height / 2, 'sky');
+
+            platforms = this.physics.add.staticGroup();
+
+            //土台
+            platforms.create(70, 568, 'ground').setScale(4,2).refreshBody();
+            
+
+            //第1スクロール画面のプラットフォーム
+            platforms.create(600, 400, 'ground').setScale(0.5,1).refreshBody();
+            platforms.create(50, 250, 'ground');
+            platforms.create(500, 100, 'ground').setScale(0.5,1).refreshBody();
+            //第2スクロール画面のプラットフォーム
+            platforms.create(config.width+150, 150, 'ground').setScale(0.5,1).refreshBody();
+            platforms.create(config.width+500, 100, 'ground').setScale(0.25,1).refreshBody();
+            platforms.create(config.width+800, 400, 'ground').setScale(0.3,1).refreshBody();
+            platforms.create(config.width+1050, 300, 'ground').setScale(0.1,1).refreshBody();
+            platforms.create(config.width+1200, 250, 'ground').setScale(0.1,1).refreshBody();
+            platforms.create(config.width+1350, 200, 'ground').setScale(0.1,1).refreshBody();
+            platforms.create(config.width+2100, 568, 'ground').setScale(2,1).refreshBody();
+
+
+            //goalの作成
+            goal = this.physics.add.sprite(config.width+2300, 0, 'goal');
+           
+            player = this.physics.add.sprite(100, 450, 'dude');
+
+            player.setBounce(0.2);
+            //player.setCollideWorldBounds(true);
+
+            this.anims.create({
+                key: 'left',
+                frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+                frameRate: 10,
+                repeat: -1
+            });
+
+            this.anims.create({
+                key: 'turn',
+                frames: [{ key: 'dude', frame: 4 }],
+                frameRate: 20
+            });
+
+            this.anims.create({
+                key: 'right',
+                frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+                frameRate: 10,
+                repeat: -1
+            });
+
+            cursors = this.input.keyboard.createCursorKeys();
+
+            this.physics.add.collider(player, platforms);
+            this.physics.add.collider(goal, platforms);
+            this.physics.add.collider(player, goal);
+
+            // カメラの設定（横スクロール）
+            this.cameras.main.setBounds(0, 0, config.width * 4, 600); // スクロールする範囲
+            this.cameras.main.startFollow(player); // プレイヤーを追跡
+        }
+
+        var acceleration = 200; // 加速度
+        var maxVelocity = 300; // 最大速度
+
+        function update() {
+            if (cursors.left.isDown) {
+                // 左矢印キーが押された場合、速度を徐々に変化させて加速
+                player.setAccelerationX(-acceleration);
+
+                // 最大速度を超えないように制限
+                if (player.body.velocity.x < -maxVelocity) {
+                    player.setVelocityX(-maxVelocity);
+                }
+
+                player.anims.play('left', true);
+            }
+            else if (cursors.right.isDown) {
+                // 右矢印キーが押された場合、速度を徐々に変化させて加速
+                player.setAccelerationX(acceleration);
+
+                // 最大速度を超えないように制限
+                if (player.body.velocity.x > maxVelocity) {
+                    player.setVelocityX(maxVelocity);
+                }
+
+                player.anims.play('right', true);
+            }
+            else {
+                // キーが押されていない場合、速度を減速させる
+                player.setAccelerationX(0);
+                player.setVelocityX(player.body.velocity.x * 0.9); // 減速率を調整
+
+                if (Math.abs(player.body.velocity.x) < 5) {
+                    player.setVelocityX(0); // 速度が一定以下になったら停止
+                }
+
+                player.anims.play('turn');
+            }
+
+            // ...
+            if (cursors.up.isDown && player.body.touching.down) {
+                player.setVelocityY(-600);
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
